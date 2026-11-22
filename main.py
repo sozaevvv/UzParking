@@ -1,10 +1,11 @@
 import asyncio
 import logging
+import os
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 
-TOKEN = "9115163230:AAGQkBgMh2m528Ruy9fg5JZrmIloUhXqvmg"
+TOKEN = os.getenv("BOT_TOKEN")
 WEBAPP_URL = "https://sozaevvv.github.io/UzParking/"
 
 bot = Bot(token=TOKEN)
