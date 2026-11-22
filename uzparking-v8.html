@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>UzParking — Smart Mobility Tashkent</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.453.0/dist/umd/lucide.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<style>
+:root{--bg:#F8FAFC;--card:#FFFFFF;--fg:#0F172A;--mut:#64748B;--bd:#E2E8F0;--ink:#0F172A;--inkfg:#FFFFFF;--map:#EEF2F7;--free:#10B981;--ev:#3B82F6;--occ:#F43F5E;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#060B18;--card:#0F172A;--fg:#F1F5F9;--mut:#94A3B8;--bd:#1E293B;--ink:#F1F5F9;--inkfg:#0F172A;--map:#0B1426}}
+.dk{--bg:#060B18;--card:#0F172A;--fg:#F1F5F9;--mut:#94A3B8;--bd:#1E293B;--map:#0B1426;color:var(--fg)}
+html{scroll-padding-top:env(safe-area-inset-top,0px);color-scheme:light dark}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:"Plus Jakarta Sans",Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+.frame{max-width:430px;margin:0 auto;min-height:100vh;background:var(--bg);position:relative}
+@media (min-width:431px){.frame{box-shadow:0 25px 50px -12px rgba(0,0,0,.25);border-left:1px solid var(--bd);border-right:1px solid var(--bd)}}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:20px}
+.mut{color:var(--mut)}
+.inp{width:100%;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:13px 14px;font-weight:600;font-size:14px;outline:none;color:var(--fg)}
+.inp:focus{border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in srgb,var(--ink) 12%,transparent)}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border-radius:16px;padding:15px;font-weight:700;font-size:15px;background:var(--ink);color:var(--inkfg);transition:transform .15s}
+.btn:active{transform:scale(.98)}.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--bd)}
+.pill{padding:8px 14px;border-radius:999px;font-size:12px;font-weight:700;border:1px solid var(--bd);background:var(--card);white-space:nowrap;transition:all .2s}
+.pill.on{background:var(--ink);color:var(--inkfg);border-color:var(--ink)}
+.bay{height:68px;border-radius:8px;border:1.5px solid;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;font-weight:700;transition:transform .15s,background .25s}
+.bay:active{transform:scale(.93)}
+.b-f{background:color-mix(in srgb,var(--free) 14%,var(--card));border-color:var(--free);color:var(--free)}
+.b-e{background:color-mix(in srgb,var(--ev) 16%,var(--card));border-color:var(--ev);color:var(--ev)}
+.b-o{background:color-mix(in srgb,var(--occ) 14%,var(--card));border-color:var(--occ);color:var(--occ)}
+.b-b{background:#0F172A;border-color:#334155;color:#fff}
+.sheet{animation:up .28s cubic-bezier(.2,.8,.2,1)}@keyframes up{from{transform:translateY(100%)}}
+.pulse{transform-box:fill-box;transform-origin:center;animation:pl 1.8s ease-out infinite}@keyframes pl{from{transform:scale(.8);opacity:.5}to{transform:scale(2.2);opacity:0}}
+.draw{stroke-dasharray:90;stroke-dashoffset:90;animation:dr .9s ease forwards}@keyframes dr{to{stroke-dashoffset:0}}
+.spin{animation:sp .7s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
+.fade{animation:fd .3s ease}@keyframes fd{from{opacity:0;transform:translateY(6px)}}
+#splash{transition:opacity .3s}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.draw{stroke-dashoffset:0}}
+.leaflet-pane,.leaflet-tile,.leaflet-marker-icon,.leaflet-tile-container,.leaflet-layer{position:absolute;left:0;top:0}.leaflet-container{overflow:hidden;position:relative;touch-action:none;isolation:isolate}
+.leaflet-tile,.leaflet-marker-icon{user-select:none;-webkit-user-drag:none}.leaflet-tile{visibility:hidden}.leaflet-tile-loaded{visibility:inherit}.leaflet-zoom-animated{transform-origin:0 0}
+.leaflet-zoom-anim .leaflet-zoom-animated{transition:transform .25s cubic-bezier(0,0,.25,1)}.leaflet-zoom-anim .leaflet-tile{transition:none}
+.leaflet-tile-pane{z-index:200}.leaflet-marker-pane{z-index:600}.leaflet-tooltip-pane{z-index:650}.leaflet-pane{z-index:400}
+.leaflet-marker-icon.leaflet-interactive{cursor:pointer;pointer-events:auto}.leaflet-tooltip{position:absolute;background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:6px;padding:2px 7px;font-size:11px;font-weight:700;white-space:nowrap;pointer-events:none}
+#lf{background:var(--map) repeating-linear-gradient(0deg,transparent 0 39px,#0001 39px 40px),repeating-linear-gradient(90deg,transparent 0 39px,#0001 39px 40px)}
+:root[data-theme="dark"]{--bg:#060B18;--card:#0F172A;--fg:#F1F5F9;--mut:#94A3B8;--bd:#1E293B;--ink:#F1F5F9;--inkfg:#0F172A;--map:#0B1426}
+[data-a]{cursor:pointer;touch-action:manipulation}
+</style>
+</head>
+<body>
+<div id="splash" class="fixed inset-0 z-[60] flex flex-col items-center justify-center" style="background:#0F172A;color:#fff"><div id="splogo"></div><div class="mt-5 text-2xl font-extrabold tracking-tight">UzParking</div><div class="mt-1 text-sm opacity-60">Smart Urban Mobility • Tashkent • build v8</div></div>
+<div id="app" class="frame"></div>
+<div id="toast" class="fixed left-1/2 -translate-x-1/2 top-4 z-[70] hidden px-4 py-2 rounded-full text-sm font-semibold shadow-lg" style="background:var(--ink);color:var(--inkfg)"></div>
+<div id="overlay"></div><div id="bm"></div><div id="pa"></div><div id="st"></div>
+<script>
+const LFL=window.L;const LOGO=(s=36)=>`<svg width="${s}" height="${s}" viewBox="0 0 48 48"><rect width="48" height="48" rx="14" fill="#0F172A"/><path class="draw" d="M17 37V13h8.5a7.5 7.5 0 010 15H17" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="25.5" cy="20.5" r="2.6" fill="#10B981"/><path d="M27 37q2.5-3 5 0t5 0" fill="none" stroke="#10B981" stroke-width="3" stroke-linecap="round"/></svg>`;
+{const l=document.createElement('link');l.rel='icon';l.type='image/svg+xml';l.href='data:image/svg+xml,'+encodeURIComponent(LOGO(64));document.head.appendChild(l)}
+document.getElementById('splogo').innerHTML=LOGO(84);
+setTimeout(()=>document.getElementById('splash').style.opacity=0,900);setTimeout(()=>document.getElementById('splash').remove(),1200);
+
+const LOCS=[['tcm','Tashkent City Mall','Sayilgoh St, Yunusabad','EV chargers',['A1','A2','B1','B2'],41.3446,69.2838,62,8,2.1],['mgc','Magic City Park','Amir Temur Ave','Family park',['A8'],41.3096,69.2528,70,10,4.8],['alay','Alay Bazaar (Oloy)','Mirzo Ulugbek district','High demand',[],41.3367,69.3345,82,6,3.4],['chor','Chorsu Bazaar','Eski Shahar','Old city',[],41.3268,69.2347,88,-4,1.2],['tas','Tashkent Intl. Airport (TAS)','Sergeli, Airport Rd','Short-stay',['A1','B8'],41.2579,69.2812,55,9,7.9],['meg','Mega Planet','Yunusabad','Shopping',['A1'],41.3571,69.2837,66,5,3],['sam','Samarkand Darvoza','Shaykhontohur','Mall',[],41.3283,69.2064,48,10,5.2],['nxt','Next Mall','Mirabad','Mall',['B1','B2'],41.3631,69.3009,58,7,5.6],['sqr','Amir Temur Square','City center','Center',[],41.3111,69.2797,72,8,.8],['rly','Railway Station','Tashkent-Central','Transit',[],41.2916,69.2791,68,-6,3.9],['exp','Uzexpocentre','Mirzo Ulugbek','Events',['A1','A2'],41.3469,69.2975,35,12,4.4],['nav','Navoi Theatre','Mirabad','Culture',[],41.3059,69.2684,60,9,1.9]].map(([id,name,area,tag,ev,la,lo,b,tr,dist])=>({id,name,area,tag,ev,la,lo,b,tr,dist,occ:Math.round(b*.16),x:(lo-69.19)/.16*300+20,y:(41.375-la)/.13*180+15}));
+const IDS=[...'AB'].flatMap(r=>[1,2,3,4,5,6,7,8].map(n=>r+n));
+const PAYS=[['wallet','UzParking Wallet','wallet'],['Payme','Payme','credit-card'],['Click','Click','credit-card'],['Uzum Bank','Uzum Bank','credit-card']];
+const DURS=[[1,'1h'],[2,'2h'],[3,'3h'],[5,'5h'],[10,'All Day']];
+const KEY='uzparking_pro_v2';
+const fmt=n=>Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,' ')+' UZS';
+const I=(n,c='w-4 h-4')=>`<i data-lucide="${n}" class="${c}"></i>`;
+const L=id=>LOCS.find(l=>l.id===id);
+function DEFC(){return[{mask:'9860 1766 •••• 4802',full:'9860176619784802',name:'',exp:'09/28',brand:'Humo'}]}
+function seed(){const spots={};LOCS.forEach((l,k)=>{const m={},h=a=>((k*7+IDS.indexOf(a)*5+3)*2654435761>>>0)%1000;IDS.forEach(i=>m[i]='f');IDS.slice().sort((a,b)=>h(a)-h(b)).slice(0,l.occ).forEach(i=>m[i]='o');if(l.id==='tcm'){m.A1='f';m.B2='f'}spots[l.id]=m});return spots}
+const def=()=>({acct:null,session:false,cars:[],car:0,wallet:250000,spots:seed(),booking:null,hist:[],revenue:0,fines:[],bank:{Payme:3000000,Click:1500000,'Uzum Bank':2000000},cards:DEFC(),cs:0});
+let S;try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}if(!S||!S.spots)S=def();if(!S.bank)S.bank={Payme:3000000,Click:1500000,'Uzum Bank':2000000};if(!S.cards)S.cards=DEFC();if(S.cs==null)S.cs=0;
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+window.addEventListener('storage',e=>{if(e.key===KEY){try{S=JSON.parse(e.newValue)||def();render()}catch(x){}}});
+let ui={t:0,bm:0,sel:null,scan:null,mode:'driver',tab:'explore',filter:'all',loc:null,opLoc:'tcm',sheet:null,at:'in',step:'form',f:{},err:'',pend:null,addCar:false};
+const free=id=>Object.values(S.spots[id]).filter(v=>v==='f').length;
+const fr=l=>{const f=free(l.id);return ui.t?Math.max(0,Math.min(16,f-Math.round(l.tr*ui.t*.16))):f};
+const ld=l=>(16-fr(l))/16*100;const TR=l=>{const x=ld(l);return x<40?0:x<=85?1:2};
+const P=l=>[5000,8000,14000][TR(l)];const TC=l=>['var(--free)','#F59E0B','var(--occ)'][TR(l)];
+const fb=()=>{const m=S.fines.filter(f=>S.cars.some(c=>c.plate.replace(/\s/g,'')===f.plate.replace(/\s/g,'')));return m.length?`<div class="card p-3 mb-3 flex items-center justify-between" style="border-color:var(--occ)"><div><b class="text-sm" style="color:var(--occ)">Fine · ${fmt(440000)}</b><div class="text-xs mut">${m[0].plate}: no valid booking</div></div><button data-a="payfine" class="pill on">Pay</button></div>`:''};
+const dg=s=>(s||'').replace(/\D/g,'');
+function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.remove('hidden');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.add('hidden'),2200)}
+const price=(l,d,m)=>Math.round(P(l)*(d-.25))+(m?2500:0);
+const plateTag=p=>`<span class="inline-flex rounded-md overflow-hidden border border-slate-300 align-middle"><span class="bg-blue-600 text-white text-[9px] font-bold px-1 flex items-center">UZ</span><span class="bg-white text-slate-900 font-extrabold tracking-wider px-2 py-0.5 text-sm">${p}</span></span>`;
+
+/* ---------- Auth ---------- */
+const inp=(k,lab,ph,t='text')=>`<label class="block mb-3"><span class="text-xs font-semibold mut">${lab}</span><input data-k="${k}" type="${t}" value="${ui.f[k]||''}" placeholder="${ph}" class="inp mt-1"></label>`;
+function auth(){const up=ui.at==='up';
+ return `<div class="px-5 pt-6 pb-10 min-h-screen flex flex-col fade"><div class="flex items-center justify-between"><div class="flex items-center gap-2">${LOGO(38)}<b class="text-lg tracking-tight">UzParking</b></div><button data-a="settings" class="pill">⚙ Settings</button></div>
+ <h1 class="text-[32px] leading-[1.1] font-extrabold tracking-tight mt-10">Park smarter<br>across Tashkent.</h1><p class="mut text-sm mt-2 mb-6">Reserve a bay, pay with Payme or Click, and drive straight in.</p>
+ ${ui.step==='otp'?`<div class="card p-5"><div class="font-bold">Enter SMS code</div><div class="text-xs mut mb-3">Sent to ${ui.pend.phone}. Auto-filled for the demo.</div><input id="otp" value="7777" maxlength="4" inputmode="numeric" class="inp text-center text-2xl tracking-[.6em] font-extrabold mb-2"><div class="text-xs mb-2" style="color:var(--occ)">${ui.err||'&nbsp;'}</div><button data-a="verify" class="btn">Verify and continue</button><button data-a="astep" class="btn ghost mt-2">Change number</button></div>`
+ :`<div class="card p-5"><div class="grid grid-cols-2 p-1 rounded-2xl mb-4" style="background:var(--bg)">${[['in','Sign In'],['up','Create Account']].map(([k,t])=>`<button data-a="atab" data-id="${k}" class="py-2 rounded-xl text-sm font-bold" style="${ui.at===k?'background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.12)':'color:var(--mut)'}">${t}</button>`).join('')}</div>
+ ${up?inp('name','Full name','Aziz Karimov'):''}${inp('phone','Phone number','+998 90 123 45 67','tel')}${up?inp('plate','Vehicle plate','01 A 777 AA')+inp('model','Car model','BYD Song Plus'):''}
+ <div class="text-xs mb-2" style="color:var(--occ)">${ui.err||'&nbsp;'}</div><button data-a="send" class="btn">${up?'Create account':'Send code'}</button></div>
+ <button data-a="demo" class="btn ghost mt-3">${I('zap')} Continue as Demo User (1-Click Judge Access)</button>`}
+ <p class="text-center text-xs mut mt-auto pt-8">Data stays on this device. Nothing is sent to a server. · build v8</p></div>`}
+
+/* ---------- Shared ---------- */
+function lot(l,act){const m=S.spots[l.id];
+ const row=r=>`<div class="grid grid-cols-8 gap-1">${IDS.filter(i=>i[0]===r).map(i=>{const v=m[i],ev=l.ev.includes(i);const c=v==='o'?'o':v==='b'?'b':ev?'e':'f';const ic=v==='o'?'car':v==='b'?'ticket':ev?'zap':'circle';return `<button data-a="${act}" data-id="${i}" class="bay b-${c}">${I(ic,'w-4 h-4')}${i}</button>`}).join('')}</div>`;
+ return `<div class="card p-3"><div class="flex justify-between text-[11px] font-bold mb-2"><span class="flex items-center gap-1" style="color:var(--free)">${I('log-in','w-3.5 h-3.5')} Entry gate</span><span class="flex items-center gap-1 mut">Exit gate ${I('log-out','w-3.5 h-3.5')}</span></div>
+ <div class="text-[10px] mut mb-1">Zone A</div>${row('A')}<div class="my-2 h-9 rounded-lg flex items-center justify-around mut" style="background:var(--bg);border-top:2px dashed var(--bd);border-bottom:2px dashed var(--bd)">${I('arrow-right')+I('arrow-right')+I('arrow-right')+I('arrow-right')}</div><div class="text-[10px] mut mb-1">Zone B</div>${row('B')}</div>
+ <div class="flex flex-wrap justify-center gap-x-4 gap-y-1 text-[11px] mut mt-3"><span><b style="color:var(--free)">■</b> Available</span><span><b style="color:var(--ev)">■</b> EV charging</span><span><b style="color:var(--occ)">■</b> Occupied</span><span><b style="color:#334155">■</b> Reserved</span></div>`}
+function head(){return `<div class="flex items-center justify-between px-4 pt-4 pb-3"><div class="flex items-center gap-2">${LOGO(32)}<b class="tracking-tight">UzParking</b><button data-a="settings" class="pill ml-1" style="padding:4px 9px">⚙</button></div>
+ <div class="flex p-1 rounded-full" style="background:var(--ink)">${[['driver','Driver App'],['op','ANPR & IoT Admin']].map(([k,t])=>`<button data-a="mode" data-id="${k}" class="px-3 py-1.5 rounded-full text-xs font-bold" style="${ui.mode===k?'background:var(--card);color:var(--fg)':'color:var(--inkfg);opacity:.7'}">${t}</button>`).join('')}</div></div>`}
+
+/* ---------- Explore ---------- */
+function list(){let a=LOCS.slice();if(ui.filter==='ev')a=a.filter(l=>l.ev.length);if(ui.filter==='near')a.sort((x,y)=>x.dist-y.dist);if(ui.filter==='price')a.sort((x,y)=>P(x)-P(y));return a}
+const col=f=>f===0?'var(--occ)':f<5?'#F59E0B':'var(--free)';
+function explore(){
+ if(ui.loc){const l=L(ui.loc),f=free(l.id);return `<div class="px-4 pb-32 fade"><button data-a="back" class="flex items-center gap-1 text-sm font-semibold mut mb-2">${I('arrow-left')} All locations</button><div class="flex justify-between items-end mb-3"><div><h2 class="text-xl font-extrabold tracking-tight leading-tight">${l.name}</h2><div class="text-sm mut">${fmt(P(l))}/hr · first 15 min free</div></div><div class="text-right"><div class="text-2xl font-extrabold leading-none" style="color:${TC(l)}">${f}</div><div class="text-xs mut">free</div></div></div>${lot(l,'spot')}<button data-a="route" data-id="${l.id}" class="btn ghost mt-3">${I('navigation')} Route to this parking</button><p class="text-center text-sm mut mt-3">Tap an available bay to book it.</p></div>`}
+ const vis=list().map(l=>l.id);
+ const road=(d,id,name)=>`<path id="${id}" d="${d}" fill="none" stroke="var(--bd)" stroke-width="12" stroke-linecap="round"/><path d="${d}" fill="none" stroke="var(--card)" stroke-width="9" stroke-linecap="round"/><text font-size="7" font-weight="700" fill="var(--mut)"><textPath href="#${id}" startOffset="8%">${name}</textPath></text>`;
+ return `<div class="px-4 pb-32 fade"><div class="text-sm mut">Hello, ${S.acct.name.split(' ')[0]}</div>${fb()}<h2 class="text-2xl font-extrabold tracking-tight mb-3">Find parking</h2>${fc()}
+ <div class="flex gap-2 overflow-x-auto pb-3 -mx-4 px-4">${[['all','All'],['ev','EV Charging ⚡'],['near','Nearest'],['price','Lowest Price']].map(([k,t])=>`<button data-a="flt" data-id="${k}" class="pill ${ui.filter===k?'on':''}">${t}</button>`).join('')}</div>
+ <div class="relative mb-4" data-a="bigmap"><svg viewBox="0 0 340 210" class="w-full rounded-3xl" style="background:var(--map);border:1px solid var(--bd)"><rect x="20" y="20" width="70" height="50" rx="10" fill="var(--free)" opacity=".12"/><rect x="210" y="125" width="80" height="35" rx="10" fill="var(--ev)" opacity=".08"/>
+ ${road('M10 165Q120 120 210 105T335 62','r1','Amir Temur Ave')}${road('M5 70Q120 95 335 150','r2','Navoi St')}${road('M120 -5Q145 100 105 215','r3','Islam Karimov St')}
+ <circle cx="150" cy="112" r="5" fill="var(--ink)" stroke="var(--card)" stroke-width="2"/>
+ ${LOCS.map(l=>{const f=fr(l),c=TC(l),o=vis.includes(l.id)?1:.2;return `<g data-a="loc" data-id="${l.id}" style="cursor:pointer;opacity:${o}"><circle class="pulse" cx="${l.x}" cy="${l.y}" r="11" fill="${c}"/><circle cx="${l.x}" cy="${l.y}" r="12" fill="${c}" stroke="#fff" stroke-width="2.5"/><text x="${l.x}" y="${l.y+4}" font-size="11" font-weight="800" text-anchor="middle" fill="#fff">${f}</text></g>`}).join('')}</svg><button data-a="bigmap" class="absolute right-2 bottom-2 px-3 py-1.5 rounded-full text-xs font-bold shadow-lg" style="background:var(--ink);color:var(--inkfg)">⤢ Open Tashkent map</button></div>
+ <div class="space-y-3">${list().map(l=>{const f=fr(l);return `<button data-a="loc" data-id="${l.id}" class="card p-4 w-full text-left flex gap-3 items-center"><div class="w-11 h-11 rounded-2xl grid place-items-center shrink-0" style="background:color-mix(in srgb,${TC(l)} 15%,var(--card));color:${TC(l)}">${I(l.ev.length?'zap':'map-pin','w-5 h-5')}</div><div class="min-w-0 flex-1"><div class="font-bold leading-tight">${l.name}</div><div class="text-xs mut">${l.dist} km · ${l.tag}${l.ev.length&&l.tag!=='EV chargers'?' · EV':''}</div></div><div class="text-right shrink-0"><div class="font-extrabold text-sm">${fmt(P(l))}</div><div class="text-xs font-semibold" style="color:${TC(l)}">${f} free${f<=3&&f>0?' · busy':''}</div></div></button>`}).join('')||'<div class="mut text-sm text-center py-6">No locations match.</div>'}</div></div>`}
+
+/* ---------- Booking sheet ---------- */
+function sheet(){const s=ui.sheet;if(!s)return '';const l=L(ui.loc),tot=price(l,s.d,s.mt),car=S.cars[s.car];
+ return `<div class="fixed inset-0 z-40" style="background:rgba(2,6,23,.55)" data-a="close"><div class="sheet absolute bottom-0 left-0 right-0 max-w-[430px] mx-auto p-5 overflow-auto" style="background:var(--card);color:var(--fg);border-radius:28px 28px 0 0;max-height:92vh;padding-bottom:calc(20px + env(safe-area-inset-bottom,0px))">
+ <div class="flex justify-between items-start mb-4"><div><div class="text-xl font-extrabold tracking-tight">Bay ${s.spot}${l.ev.includes(s.spot)?' ⚡':''}</div><div class="text-xs mut">${l.name} · ${fmt(P(l))}/hr</div></div><span class="text-[11px] font-bold px-2.5 py-1 rounded-full" style="background:color-mix(in srgb,var(--free) 16%,var(--card));color:var(--free)">First 15 mins free</span></div>
+ <div class="text-xs font-semibold mut mb-1.5">Duration</div><div class="grid grid-cols-5 gap-1.5 mb-4">${DURS.map(([d,t])=>`<button data-a="dur" data-id="${d}" class="pill text-center px-1 ${s.d===d?'on':''}">${t}</button>`).join('')}</div>
+ <div class="text-xs font-semibold mut mb-1.5">Vehicle</div><div class="flex gap-2 overflow-x-auto mb-4">${S.cars.map((c,i)=>`<button data-a="scar" data-id="${i}" class="pill ${s.car===i?'on':''}">${c.model} · ${c.plate}</button>`).join('')}</div>
+ <div class="text-xs font-semibold mut mb-1.5">Payment</div><div class="grid grid-cols-2 gap-2 mb-4">${PAYS.map(([k,n,ic])=>`<button data-a="pm" data-id="${k}" class="card p-3 text-left flex items-center gap-2 text-sm font-bold" style="${s.pm===k?'border:2px solid var(--ink)':''}">${I(ic,'w-4 h-4')}<span class="leading-tight">${n}${k==='wallet'?`<span class="block text-[11px] mut font-medium">${fmt(S.wallet)}</span>`:''}</span></button>`).join('')}</div>
+ <button data-a="mt" class="card p-3 mb-3 w-full flex justify-between items-center text-left text-sm" style="${s.mt?'border:2px solid var(--ev)':''}"><span><b>Unified Metro/Bus pass</b><span class="block text-xs mut">ATTO · +2 500 UZS</span></span><b>${s.mt?'✓ Added':'Add'}</b></button><div class="rounded-2xl p-3 mb-3 text-sm space-y-1" style="background:var(--bg)"><div class="flex justify-between mut"><span>${s.d}h × ${fmt(P(l))}</span><span>${fmt(P(l)*s.d)}</span></div><div class="flex justify-between" style="color:var(--free)"><span>First 15 mins free</span><span>−${fmt(P(l)/4)}</span></div>${s.mt?'<div class="flex justify-between mut"><span>Metro/Bus pass</span><span>2 500 UZS</span></div>':''}<div class="flex justify-between font-extrabold text-base pt-1 border-t" style="border-color:var(--bd)"><span>Total</span><span>${fmt(tot)}</span></div></div>
+ <div class="text-xs mb-2 text-center" style="color:var(--occ)">${s.err||'&nbsp;'}</div>
+ <button data-a="pay" class="btn" ${s.busy?'disabled':''}>${s.busy?`<span class="spin inline-block w-4 h-4 rounded-full border-2" style="border-color:var(--inkfg);border-top-color:transparent"></span> Processing…`:'Confirm &amp; Pay'}</button></div></div>`}
+
+/* ---------- Pass ---------- */
+function qr(seedStr){let h=2166136261;for(const c of seedStr){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}const N=25,f=(x,y)=>(x<8&&y<8)||(x>16&&y<8)||(x<8&&y>16);let r='';
+ for(let y=0;y<N;y++)for(let x=0;x<N;x++){let on;if(f(x,y)){const lx=x>16?x-17:x,ly=y>16?y-17:y;on=lx<7&&ly<7&&(lx===0||ly===0||lx===6||ly===6||(lx>=2&&lx<=4&&ly>=2&&ly<=4))}else{h=Math.imul(h^(x*31+y),1103515245)+12345;on=((h>>>16)&1)===1}if(on)r+=`<rect x="${x}" y="${y}" width="1" height="1"/>`}
+ return `<svg viewBox="-1 -1 27 27" class="w-40 h-40" fill="#0F172A" shape-rendering="crispEdges">${r}</svg>`}
+function pass(){const b=S.booking;let h='';
+ if(b){const l=L(b.loc),p=b.status==='parked';
+ h=`<div class="rounded-[28px] overflow-hidden text-white shadow-xl mb-4" style="background:linear-gradient(160deg,#0F172A,#1E293B 65%,#0B3D33)">
+ <div class="p-5 flex justify-between items-start"><div><div class="text-xs opacity-60">${l.name}</div><div class="text-4xl font-extrabold tracking-tight mt-1">Bay ${b.spot}</div></div><span class="text-[10px] font-extrabold px-2.5 py-1 rounded-full" style="background:${p?'#10B981':'#F59E0B'};color:#0F172A">${p?'PARKED • IN PROGRESS':'RESERVED'}</span></div>
+ <div class="relative mx-5 border-t border-dashed border-white/30"><i class="absolute -left-8 -top-3 w-6 h-6 rounded-full" style="background:var(--bg)"></i><i class="absolute -right-8 -top-3 w-6 h-6 rounded-full" style="background:var(--bg)"></i></div>
+ <div class="p-5 text-center"><div class="inline-block p-3 bg-white rounded-2xl">${qr(b.id+b.plate)}</div><div class="text-xs opacity-60 mt-2">Scan at the barrier · #${b.id}</div>
+ <div class="mt-4">${plateTag(b.plate)}<div class="text-xs opacity-60 mt-1">${b.model}</div></div>
+ <div class="mt-4 rounded-2xl py-3" style="background:rgba(255,255,255,.07)"><div class="text-xs opacity-60">Time remaining</div><div id="tmr" class="text-4xl font-extrabold tabular-nums tracking-tight">--:--:--</div></div>
+ <div class="mt-4 text-left text-sm space-y-1"><div class="flex justify-between opacity-70"><span>${b.d}h × ${fmt(b.rate)}</span><span>${fmt(b.rate*b.d)}</span></div><div class="flex justify-between text-emerald-400"><span>First 15 mins free</span><span>−${fmt(b.rate/4)}</span></div>${b.mt?'<div class="flex justify-between opacity-70"><span>Metro/Bus pass</span><span>2 500 UZS</span></div>':''}<div class="flex justify-between font-extrabold border-t border-white/15 pt-1"><span>Paid via ${b.pm==='wallet'?'Wallet':b.pm}</span><span>${fmt(b.price)}</span></div></div></div></div>
+ <button data-a="${p?'exit':'entry'}" class="btn" style="${p?'background:var(--occ);color:#fff':''}">${I(p?'log-out':'log-in','w-5 h-5')} ${p?'Simulate Barrier Exit &amp; Finish':'Simulate Barrier Entry'}</button>`}
+ else h=`<div class="card p-8 text-center mb-4"><div class="w-14 h-14 rounded-2xl grid place-items-center mx-auto mb-3" style="background:var(--bg)">${I('ticket','w-6 h-6')}</div><div class="font-extrabold">No active pass</div><div class="text-sm mut mb-4">Book a bay and your digital pass appears here.</div><button data-a="tab" data-id="explore" class="btn">Find parking</button></div>`;
+ return `<div class="px-4 pb-32 fade"><h2 class="text-2xl font-extrabold tracking-tight mb-3">My Pass</h2>${h}<h3 class="font-bold mt-6 mb-2">History</h3>${S.hist.length?S.hist.map(x=>`<div class="card p-3 mb-2 flex items-center gap-3"><div class="w-9 h-9 rounded-xl grid place-items-center" style="background:var(--bg)">${I('check')}</div><div class="flex-1 min-w-0"><div class="text-sm font-bold truncate">${x.loc}</div><div class="text-xs mut">Bay ${x.spot} · ${x.plate} · ${x.date}</div></div><div class="text-sm font-bold">${fmt(x.price)}</div></div>`).join(''):'<div class="text-sm mut">Finished sessions will appear here.</div>'}</div>`}
+
+/* ---------- Profile ---------- */
+function profile(){const a=S.acct;
+ return `<div class="px-4 pb-32 fade"><div class="flex items-center gap-3 mb-4"><div class="w-14 h-14 rounded-full grid place-items-center text-lg font-extrabold" style="background:var(--ink);color:var(--inkfg)">${a.name.split(' ').map(w=>w[0]).join('').slice(0,2)}</div><div><div class="text-xl font-extrabold tracking-tight">${a.name}</div><div class="text-sm mut">${a.phone}</div></div></div>
+ <div class="rounded-[24px] p-5 text-white mb-4" style="background:linear-gradient(135deg,#0F172A,#1E293B 60%,#0B3D33)"><div class="text-xs opacity-60 flex items-center gap-1">${I('wallet')} UzParking Wallet</div><div class="text-3xl font-extrabold tracking-tight mt-1">${fmt(S.wallet)}</div><button data-a="topup" class="mt-3 px-3 py-1.5 rounded-full text-xs font-bold bg-white text-slate-900">+ Top up wallet</button></div>
+ <div class="flex justify-between items-center mb-2"><h3 class="font-bold">Garage</h3><button data-a="addcar" class="text-sm font-semibold flex items-center gap-1">${I('plus')} Add car</button></div>
+ ${ui.addCar?`<div class="card p-4 mb-3">${inp('plate2','Plate','10 B 456 CA')}${inp('model2','Model','Chevrolet Malibu')}<div class="text-xs mb-2" style="color:var(--occ)">${ui.err||'&nbsp;'}</div><button data-a="savecar" class="btn">Save vehicle</button></div>`:''}
+ ${S.cars.map((c,i)=>`<button data-a="car" data-id="${i}" class="card p-3 mb-2 w-full flex items-center gap-3 text-left" style="${S.car===i?'border:2px solid var(--ink)':''}"><div class="w-10 h-10 rounded-xl grid place-items-center" style="background:var(--bg)">${I('car','w-5 h-5')}</div><div class="flex-1"><div class="font-bold text-sm">${c.model}</div><div class="mt-0.5">${plateTag(c.plate)}</div></div>${S.car===i?'<span class="text-xs font-bold" style="color:var(--free)">Active</span>':''}</button>`).join('')}
+ <button data-a="settings" class="btn ghost mt-5">⚙ Settings</button><button data-a="logout" class="btn mt-3">${I('log-out')} Log out</button><button data-a="reset" class="w-full text-xs mut mt-4 py-2">Reset demo data</button></div>`}
+
+/* ---------- Operator ---------- */
+function op(){const l=L(ui.opLoc);let tot=0,busy=0,bk=0;LOCS.forEach(x=>Object.values(S.spots[x.id]).forEach(v=>{tot++;if(v!=='f')busy++;if(v==='b')bk++}));
+ return `<div class="dk mx-3 mb-6 rounded-[28px] p-4 fade" style="background:#060B18"><div class="flex items-center justify-between mb-3"><div class="font-extrabold">Operator console</div><span class="text-xs font-bold flex items-center gap-1.5" style="color:var(--free)"><i class="w-2 h-2 rounded-full pulse" style="background:var(--free)"></i>LIVE</span></div>
+ <div class="grid grid-cols-3 gap-2 mb-4">${[['Occupancy',Math.round(busy/tot*100)+'%'],['Sessions',bk],['Revenue',fmt(S.revenue).replace(' UZS','')]].map(([a,b])=>`<div class="card p-3"><div class="text-[11px] mut">${a}</div><div class="font-extrabold ${String(b).length>6?'text-sm':'text-xl'}">${b}</div>${a==='Revenue'?'<div class="text-[10px] mut">UZS</div>':''}</div>`).join('')}</div>
+ <div class="flex gap-2 overflow-x-auto pb-3">${LOCS.map(x=>`<button data-a="oploc" data-id="${x.id}" class="pill ${x.id===ui.opLoc?'on':''}" style="${x.id===ui.opLoc?'background:#fff;color:#0F172A;border-color:#fff':'background:var(--card);color:var(--fg)'}">${x.name.split(' (')[0].replace('Tashkent Intl. Airport','Airport TAS')} · ${free(x.id)}</button>`).join('')}</div>
+ ${anpr()}<div class="text-xs mut mb-2">Tap a bay to toggle its ground sensor. Reserved bays are locked.</div>${lot(l,'tog')}</div>`}
+
+/* ---------- Render ---------- */
+function render(){const a=document.getElementById('app');
+ if(!S.session){a.innerHTML=auth();document.getElementById('overlay').innerHTML=''}
+ else{const d=ui.mode==='driver';
+  a.innerHTML=head()+(d?(ui.tab==='explore'?explore():ui.tab==='pass'?pass():profile()):op())+(d?`<nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-30 grid grid-cols-3 border-t" style="background:var(--card);border-color:var(--bd);padding-bottom:env(safe-area-inset-bottom,0px)">${[['explore','compass','Explore'],['pass','ticket','My Pass'],['profile','user','Profile']].map(([k,ic,t])=>`<button data-a="tab" data-id="${k}" class="py-3 flex flex-col items-center gap-0.5 text-[11px] font-bold relative" style="${ui.tab===k?'':'color:var(--mut)'}">${I(ic,'w-5 h-5')}${t}${k==='pass'&&S.booking?'<i class="absolute top-2 right-[34%] w-2 h-2 rounded-full" style="background:var(--free)"></i>':''}</button>`).join('')}</nav>`:'');
+  document.getElementById('overlay').innerHTML=d?sheet():''}
+ try{lucide.createIcons()}catch(x){};tick();if(ui.bm){refBM();bmUI()}}
+function tick(){const e=document.getElementById('tmr');if(!e||!S.booking)return;const s=Math.floor((S.booking.end-Date.now())/1000);if(s<0){e.textContent='Time expired';e.style.fontSize='24px';return}const z=n=>String(n).padStart(2,'0');e.textContent=`${z(Math.floor(s/3600))}:${z(Math.floor(s%3600/60))}:${z(s%60)}`}
+setInterval(tick,1000);
+const DICT={};`Park smarter|Паркуйтесь умнее|Aqlliroq to‘xtang
+across Tashkent.|по всему Ташкенту.|butun Toshkent bo‘ylab.
+Reserve a bay, pay with Payme or Click, and drive straight in.|Забронируйте место, оплатите через Payme или Click и заезжайте.|Joy band qiling, Payme yoki Click orqali to‘lang va kiring.
+Sign In|Вход|Kirish
+Create Account|Регистрация|Ro‘yxatdan o‘tish
+Create account|Создать аккаунт|Akkaunt yaratish
+Full name|Полное имя|To‘liq ism
+Phone number|Номер телефона|Telefon raqami
+Vehicle plate|Госномер|Davlat raqami
+Car model|Модель авто|Avto modeli
+Send code|Отправить код|Kod yuborish
+Enter SMS code|Введите SMS-код|SMS kodni kiriting
+Verify and continue|Подтвердить и продолжить|Tasdiqlash va davom etish
+Change number|Изменить номер|Raqamni o‘zgartirish
+Continue as Demo User (1-Click Judge Access)|Войти как демо-пользователь (1 клик для жюри)|Demo foydalanuvchi sifatida kirish (jyuri uchun 1 klik)
+Data stays on this device. Nothing is sent to a server. · build v8|Данные хранятся на этом устройстве. Ничего не отправляется на сервер. · build v8|Ma’lumotlar shu qurilmada saqlanadi. Serverga hech narsa yuborilmaydi. · build v8
+Driver App|Водитель|Haydovchi
+ANPR & IoT Admin|ANPR и IoT-админ|ANPR va IoT admin
+Explore|Поиск|Qidiruv
+My Pass|Мой пропуск|Mening ruxsatnomam
+Profile|Профиль|Profil
+Find parking|Найти парковку|Parkovka topish
+AI forecast|ИИ-прогноз|AI prognoz
+Now|Сейчас|Hozir
++30 min|+30 мин|+30 daq
++60 min|+60 мин|+60 daq
+All|Все|Hammasi
+EV Charging ⚡|Зарядка EV ⚡|EV zaryadlash ⚡
+Nearest|Ближайшие|Eng yaqin
+Lowest Price|Дешевле всего|Eng arzon
+⤢ Open Tashkent map|⤢ Карта Ташкента|⤢ Toshkent xaritasi
+No locations match.|Ничего не найдено.|Hech narsa topilmadi.
+All locations|Все парковки|Barcha parkovkalar
+Tap an available bay to book it.|Нажмите на свободное место, чтобы забронировать.|Band qilish uchun bo‘sh joyni bosing.
+Route to this parking|Маршрут до парковки|Parkovkagacha marshrut
+Entry gate|Въезд|Kirish
+Exit gate|Выезд|Chiqish
+Zone A|Зона A|A zona
+Zone B|Зона B|B zona
+Available|Свободно|Bo‘sh
+EV charging|Зарядка EV|EV zaryadlash
+Occupied|Занято|Band
+Reserved|Бронь|Bron
+First 15 mins free|Первые 15 минут бесплатно|Dastlabki 15 daqiqa bepul
+Duration|Длительность|Davomiyligi
+Vehicle|Автомобиль|Avtomobil
+Payment|Оплата|To‘lov
+Total|Итого|Jami
+Confirm & Pay|Подтвердить и оплатить|Tasdiqlash va to‘lash
+Processing…|Обработка…|Qayta ishlanmoqda…
+Unified Metro/Bus pass|Единый проездной метро/автобус|Metro/avtobus yagona chiptasi
+Add|Добавить|Qo‘shish
+✓ Added|✓ Добавлено|✓ Qo‘shildi
+Metro/Bus pass|Проездной метро/автобус|Metro/avtobus chiptasi
+No active pass|Нет активного пропуска|Faol ruxsatnoma yo‘q
+Book a bay and your digital pass appears here.|Забронируйте место, и цифровой пропуск появится здесь.|Joy band qiling, raqamli ruxsatnoma shu yerda chiqadi.
+Time remaining|Осталось времени|Qolgan vaqt
+PARKED • IN PROGRESS|ПРИПАРКОВАНО|TO‘XTAGAN
+RESERVED|ЗАБРОНИРОВАНО|BRON QILINGAN
+Simulate Barrier Entry|Имитировать въезд|Kirishni simulyatsiya qilish
+Simulate Barrier Exit & Finish|Имитировать выезд и завершить|Chiqishni simulyatsiya qilib yakunlash
+History|История|Tarix
+Finished sessions will appear here.|Завершённые сессии появятся здесь.|Yakunlangan seanslar shu yerda chiqadi.
+UzParking Wallet|Кошелёк UzParking|UzParking hamyoni
++ Top up wallet|+ Пополнить кошелёк|+ Hamyonni to‘ldirish
+Garage|Гараж|Garaj
+Add car|Добавить авто|Avto qo‘shish
+Save vehicle|Сохранить авто|Avtoni saqlash
+Active|Активно|Faol
+Log out|Выйти|Chiqish
+Reset demo data|Сбросить демо-данные|Demo ma’lumotlarni tiklash
+Operator console|Консоль оператора|Operator konsoli
+Occupancy|Загрузка|Bandlik
+Sessions|Сессии|Seanslar
+Revenue|Доход|Daromad
+Tap a bay to toggle its ground sensor. Reserved bays are locked.|Нажмите на место, чтобы переключить датчик. Забронированные заблокированы.|Datchikni almashtirish uchun joyni bosing. Bron qilinganlar bloklangan.
+ANPR camera|Камера ANPR|ANPR kamera
+Waiting for vehicle…|Ожидание автомобиля…|Avtomobil kutilmoqda…
+Scan typed plate|Сканировать введённый номер|Kiritilgan raqamni skanerlash
+Scan booked car|Сканировать авто с бронью|Bronli avtoni skanerlash
+Random car|Случайное авто|Tasodifiy avto
+Back|Назад|Orqaga
+Tashkent|Ташкент|Toshkent
+Route|Маршрут|Marshrut
+Choose a bay|Выбрать место|Joy tanlash
+Book bay|Забронировать|Band qilish
+Hide steps|Скрыть шаги|Qadamlarni yashirish
+Show steps|Показать шаги|Qadamlarni ko‘rsatish
+Payment successful|Оплата прошла успешно|To‘lov muvaffaqiyatli
+Card number|Номер карты|Karta raqami
+My card|Моя карта|Mening kartam
+Card balance:|Баланс карты:|Karta balansi:
+Merchant|Получатель|Qabul qiluvchi
+Amount|Сумма|Summa
+Confirm|Подтвердить|Tasdiqlash
+Pay|Оплатить|To‘lash
+✕ Cancel|✕ Отмена|✕ Bekor qilish
+Top up UzParking Wallet|Пополнение кошелька UzParking|UzParking hamyonini to‘ldirish
+Not enough funds on this card|Недостаточно средств на карте|Kartada mablag‘ yetarli emas
+Wrong code. Use 7777.|Неверный код. Используйте 7777.|Kod noto‘g‘ri. 7777 dan foydalaning.
+Processing payment…|Обработка платежа…|To‘lov amalga oshirilmoqda…
+Wallet topped up|Кошелёк пополнен|Hamyon to‘ldirildi
+Barrier opened. Welcome!|Шлагбаум открыт. Добро пожаловать!|Shlagbaum ochildi. Xush kelibsiz!
+Session finished. Bay released|Сессия завершена. Место освобождено|Seans yakunlandi. Joy bo‘shatildi
+Vehicle added|Авто добавлено|Avto qo‘shildi
+Settings|Настройки|Sozlamalar
+⚙ Settings|⚙ Настройки|⚙ Sozlamalar
+Appearance|Оформление|Ko‘rinish
+Auto|Авто|Avto
+☀ Light|☀ Светлая|☀ Yorug‘
+☾ Dark|☾ Тёмная|☾ Qorong‘i
+Language|Язык|Til
+My cards|Мои карты|Mening kartalarim
+Cardholder|Владелец|Karta egasi
+Expiry|Срок|Amal qilish muddati
+Add card|Добавить карту|Karta qo‘shish
+Remove|Удалить|O‘chirish
+Card added|Карта добавлена|Karta qo‘shildi
+Keep at least one card|Оставьте хотя бы одну карту|Kamida bitta karta qolsin
+Enter a 16-digit card number|Введите 16-значный номер карты|16 xonali karta raqamini kiriting
+Enter expiry as MM/YY|Срок в формате ММ/ГГ|Muddatni MM/YY ko‘rinishida kiriting
+Default|По умолчанию|Asosiy
+Only the first 4 and last 4 digits are kept on this device.|На устройстве хранятся только первые 4 и последние 4 цифры.|Qurilmada faqat birinchi 4 va oxirgi 4 raqam saqlanadi.
+No account for this number. Create one or use Demo User.|Нет аккаунта с этим номером. Создайте его или войдите как демо.|Bu raqamga akkaunt yo‘q. Yarating yoki demo bilan kiring.
+Fill in every field, including a full phone number.|Заполните все поля, включая полный номер телефона.|Barcha maydonlarni, to‘liq telefon raqamini ham to‘ldiring.
+Wallet balance too low. Pick another method or top up.|Недостаточно средств в кошельке. Выберите другой способ или пополните.|Hamyonda mablag‘ yetarli emas. Boshqa usul tanlang yoki to‘ldiring.`.split('\n').forEach(l=>{const a=l.split('|');DICT[a[0]]=[a[1],a[2]]});
+const RXS=[[/^Hello, (.+)$/,'Привет, $1','Salom, $1'],[/^(\d+) free · busy$/,'$1 своб. · занято','$1 bo‘sh · band'],[/^(\d+) free$/,'$1 своб.','$1 bo‘sh'],[/^(.+)\/hr · first 15 min free$/,'$1/ч · первые 15 мин бесплатно','$1/soat · dastlabki 15 daq bepul'],[/^Bay (\w+) is occupied$/,'Место $1 занято','Joy $1 band'],[/^Bay (\w+)$/,'Место $1','Joy $1'],[/^Scan at the barrier · (.+)$/,'Покажите у шлагбаума · $1','Shlagbaumda ko‘rsating · $1'],[/^Paid via (.+)$/,'Оплачено: $1','To‘landi: $1'],[/^Sent to (.+)\. Auto-filled for the demo\.$/,'Отправлено на $1. Для демо код подставлен.','$1 raqamiga yuborildi. Demo uchun avto-to‘ldirilgan.'],[/^~(\d+) bays expected free on arrival$/,'~$1 мест будет свободно к прибытию','Yetib borganda ~$1 joy bo‘sh bo‘ladi'],[/^Opening (.+)…$/,'Открываем $1…','$1 ochilmoqda…'],[/^Pay (\d.+)$/,'Оплатить $1','To‘lash $1'],[/^Top up (\d.+)$/,'Пополнить $1','To‘ldirish $1'],[/^Fine · (.+)$/,'Штраф · $1','Jarima · $1'],[/^Hello$/,'Привет','Salom']];
+let ST;try{ST=JSON.parse(localStorage.getItem('uzp_set'))}catch(e){}ST=Object.assign({theme:'auto',lang:'en'},ST||{});
+const saveST=()=>{try{localStorage.setItem('uzp_set',JSON.stringify(ST))}catch(e){}};
+const applyTheme=()=>{const d=document.documentElement;if(ST.theme==='auto')delete d.dataset.theme;else d.dataset.theme=ST.theme;d.lang=ST.lang};applyTheme();
+function trn(root){if(ST.lang==='en')return;const li=ST.lang==='ru'?0:1,w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode()){const p=n.parentNode&&n.parentNode.nodeName;if(p==='SCRIPT'||p==='STYLE')continue;const raw=n.nodeValue,s=raw.trim();if(!s)continue;let r=DICT[s]&&DICT[s][li];if(!r)for(const x of RXS){if(x[0].test(s)){r=s.replace(x[0],x[1+li]);break}}if(r&&r!==s)n.nodeValue=raw.replace(s,r)}}
+function setUI(){const o=document.getElementById('st');if(!ui.st){o.innerHTML='';return}const pl=(k,v,n,fn)=>`<button data-a="${fn}" data-id="${k}" class="pill ${v===k?'on':''}">${n}</button>`;
+ o.innerHTML=`<div class="fixed inset-0 z-[58]" style="background:rgba(2,6,23,.55)" data-a="stx"><div class="sheet absolute bottom-0 left-0 right-0 max-w-[430px] mx-auto p-5 overflow-auto" style="background:var(--card);color:var(--fg);border-radius:28px 28px 0 0;max-height:92vh;padding-bottom:calc(20px + env(safe-area-inset-bottom,0px))"><div class="flex justify-between items-center mb-4"><b class="text-xl">Settings</b><button data-a="stc" class="pill">✕</button></div>
+ <div class="text-xs font-semibold mut mb-1.5">Appearance</div><div class="grid grid-cols-3 gap-2 mb-4">${[['auto','Auto'],['light','☀ Light'],['dark','☾ Dark']].map(([k,n])=>pl(k,ST.theme,n,'sth')).join('')}</div>
+ <div class="text-xs font-semibold mut mb-1.5">Language</div><div class="grid grid-cols-3 gap-2 mb-4">${[['en','English'],['ru','Русский'],['uz','Oʻzbekcha']].map(([k,n])=>pl(k,ST.lang,n,'stl')).join('')}</div>
+ <b>My cards</b><div class="mt-2">${S.cards.map((c,i)=>`<div class="card p-3 mb-2 flex items-center gap-3" style="${S.cs===i?'border:2px solid var(--ink)':''}"><button data-a="stcs" data-id="${i}" class="flex-1 text-left"><div class="font-bold text-sm">${c.brand} · ${c.mask}</div><div class="text-xs mut">${esc(c.name||(S.acct?S.acct.name:'')).toUpperCase()} · ${c.exp}${S.cs===i?' · <span>Default</span>':''}</div></button><button data-a="stdel" data-id="${i}" class="text-xs mut">Remove</button></div>`).join('')}</div>
+ <div class="card p-3 mt-2">${inp('cn','Card number','8600 1234 5678 9012')}<div class="grid grid-cols-2 gap-2">${inp('ch','Cardholder','AZIZ KARIMOV')}${inp('ce','Expiry','MM/YY')}</div><div class="text-xs mb-2" style="color:var(--occ)">${ui.stErr||'&nbsp;'}</div><button data-a="stadd" class="btn">Add card</button><div class="text-[11px] mut mt-2">Only the first 4 and last 4 digits are kept on this device.</div></div></div></div>`}
+new MutationObserver(()=>{if(ST.lang!=='en'&&!trn.q){trn.q=1;requestAnimationFrame(()=>{trn.q=0;trn(document.body)})}}).observe(document.body,{childList:true,subtree:true,characterData:true});
+const MS=[['Chorsu',41.3256,69.2359],['Mustaqillik Maydoni',41.3138,69.2832],['Oybek',41.3394,69.2810],['Paxtakor',41.3068,69.2645],['Mirzo Ulugbek',41.3314,69.3085]];
+let BM,BK={},RT=null,ME=null,TLOK=0;
+const CEN=[41.3111,69.2797],hv=(a,b,c,d)=>{const r=x=>x*Math.PI/180;return 12742*Math.asin(Math.sqrt(Math.sin(r(c-a)/2)**2+Math.cos(r(a))*Math.cos(r(c))*Math.sin(r(d-b)/2)**2))};
+function getMe(cb){const dm=()=>{ME={la:CEN[0],lo:CEN[1],real:0};cb()};if(!navigator.geolocation)return dm();navigator.geolocation.getCurrentPosition(p=>{const a=p.coords.latitude,o=p.coords.longitude;if(hv(a,o,CEN[0],CEN[1])<60){ME={la:a,lo:o,real:1};cb()}else dm()},dm,{timeout:4000,maximumAge:60000})}
+function clearRoute(){if(RT&&BM)BM.removeLayer(RT);RT=null;ui.rt=null}
+function route(id){const l=L(id);ui.sel=id;clearRoute();getMe(async()=>{if(!BM)return;let pts,km,min,ap=0,os;try{const r=await fetch(`https://router.project-osrm.org/route/v1/driving/${ME.lo},${ME.la};${l.lo},${l.la}?overview=full&geometries=geojson&steps=true`),j=await r.json(),q=j.routes[0];pts=q.geometry.coordinates.map(c=>[c[1],c[0]]);km=q.distance/1000;min=q.duration/60;os=q.legs[0].steps}catch(e){pts=[[ME.la,ME.lo],[l.la,l.lo]];km=hv(ME.la,ME.lo,l.la,l.lo)*1.3;min=km/30*60;ap=1}
+ RT=LFL.layerGroup([LFL.polyline(pts,{color:'#2563EB',weight:6,opacity:.9}),LFL.circleMarker([ME.la,ME.lo],{radius:8,color:'#fff',weight:3,fillColor:'#2563EB',fillOpacity:1})]).addTo(BM);BM.fitBounds(pts,{paddingTopLeft:[40,70],paddingBottomRight:[40,330]});ui.rt={id,km,min,ap,steps:mkSteps(l,km,os)};bmUI()})}
+const fc=()=>`<div class="flex items-center gap-1 p-1 rounded-full mb-3 w-max max-w-full" style="background:var(--card);border:1px solid var(--bd)"><span class="text-[11px] font-bold mut px-2 whitespace-nowrap">AI forecast</span>${['Now','+30 min','+60 min'].map((x,i)=>`<button data-a="ft" data-id="${i}" class="pill ${ui.t==i?'on':''}">${x}</button>`).join('')}</div>`;
+const bic=l=>LFL.divIcon({className:'',html:`<div style="width:38px;height:38px;border-radius:50%;background:${TC(l)};border:3px solid #fff;color:#fff;font-weight:800;display:grid;place-items:center;box-shadow:0 3px 10px #0006">${fr(l)}</div>`,iconSize:[38,38]});
+function openMap(){ui.bm=1;ui.sel=null;document.getElementById('bm').innerHTML=`<div class="fixed inset-y-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-[45] flex flex-col" style="background:var(--bg);color:var(--fg)"><div class="flex items-center justify-between px-4 py-3"><button data-a="bmclose" class="flex items-center gap-1 font-semibold">${I('arrow-left')} Back</button><b>Tashkent</b><span class="w-14"></span></div><div class="relative flex-1"><div id="lf" class="absolute inset-0"></div><div id="bmui" class="absolute inset-0" style="z-index:1000;pointer-events:none"></div></div></div>`;
+ try{BM=LFL.map('lf',{zoomControl:false,attributionControl:false}).setView([41.3111,69.2797],12);LFL.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19}).on('tileload',()=>{TLOK=1}).addTo(BM);setTimeout(()=>{if(BM&&!TLOK)toast('Map tiles are blocked here. Open the file in a browser.')},5000);
+ MS.forEach(m=>LFL.marker([m[1],m[2]],{icon:LFL.divIcon({className:'',html:'<div style="width:22px;height:22px;border-radius:6px;background:#3B82F6;color:#fff;font:800 12px sans-serif;display:grid;place-items:center;border:2px solid #fff">M</div>',iconSize:[22,22]})}).addTo(BM).bindTooltip(m[0]));
+ BK={};LOCS.forEach(l=>{BK[l.id]=LFL.marker([l.la,l.lo],{icon:bic(l)}).addTo(BM).on('click',()=>{if(ui.rt&&ui.rt.id!==l.id)clearRoute();ui.sel=l.id;bmUI()})});BM.on('click',()=>{ui.sel=null;bmUI()});setTimeout(()=>BM&&BM.invalidateSize(),50)}catch(e){}
+ try{lucide.createIcons()}catch(x){};bmUI()}
+function closeMap(){RT=null;ui.rt=null;if(BM){try{BM.remove()}catch(e){}BM=null}BK={};ui.bm=0;document.getElementById('bm').innerHTML=''}
+const refBM=()=>LOCS.forEach(l=>BK[l.id]&&BK[l.id].setIcon(bic(l)));
+const GT={tcm:['Entry B','Sayilgoh St'],mgc:['Entry A','Amir Temur Ave'],alay:['North Gate','Mirzo Ulugbek Ave'],chor:['Entry C','Ali Qodiriy St'],tas:['Departures Gate 2','Airport Rd'],meg:['Entry B','Yunusabad Ave'],sam:['West Gate','Navoi St'],nxt:['Entry A','Mirabad St'],sqr:['Gate 1','Amir Temur Ave'],rly:['Entry D','Turkiston St'],exp:['Gate 3','Mirzo Ulugbek Ave'],nav:['Entry A','Navoi St']};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const frAt=(l,x)=>{const o=ui.t;ui.t=x;const v=fr(l);ui.t=o;return v};
+function mkSteps(l,km,os){const g=GT[l.id],a=[];
+ if(os&&os.length>2){const dep=os[0],mid=os.slice(1,-1).filter(s=>s.name).sort((x,y)=>y.distance-x.distance)[0];a.push({t:'Start on '+esc(dep.name||'the road'),d:dep.distance/1000});
+  if(mid){const md=mid.maneuver.modifier||'',tn=/left|right/.test(md)?'Turn '+md.replace(/slight |sharp /,'')+' onto ':'Continue on ';a.push({t:tn+esc(mid.name),d:mid.distance/1000})}}
+ else{a.push({t:'Start from '+(ME&&ME.real?'your location':'Amir Temur Ave (city center)'),d:km*.25});a.push({t:'Continue towards '+esc(l.area),d:km*.5})}
+ const rest=Math.max(.1,km-a.reduce((s,x)=>s+x.d,0));
+ a.push({t:`Turn right on ${g[1]} towards <b style="color:var(--free)">${g[0]}</b>`,d:rest,gate:1});
+ a.push({t:`Arrive at <b style="color:var(--free)">${g[0]} · ${g[1]}</b> · scan QR at barrier`,gate:1});return a}
+function rm(l){const r=ui.rt,g=GT[l.id],eta=new Date(Date.now()+r.min*60000).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}),ff=frAt(l,r.min<15?0:r.min<45?1:2),f=ME?ME.la+','+ME.lo:'',d=l.la+','+l.lo,ls=r.steps.length-1;
+ return `<div class="rounded-2xl p-3 mt-3" style="background:var(--bg)"><div class="flex justify-between items-center"><div><div class="text-xl font-extrabold leading-none">${Math.round(r.min)} min <span class="text-sm mut font-bold">· ${r.km.toFixed(1)} km</span></div><div class="text-[11px] mut mt-1">${r.ap?'Approximate route':'Live route'} from ${ME&&ME.real?'your location':'city center'} · arrive ~${eta}</div></div><button data-a="rmt" class="pill">${ui.rm===0?'Show steps':'Hide steps'}</button></div>
+<div class="mt-2 rounded-xl px-3 py-2 flex items-center gap-2 text-sm font-bold" style="background:var(--ink);color:var(--inkfg)">${I('log-in')} ${g[0]} · ${g[1]}</div>
+${ui.rm===0?'':`<ol class="mt-2 space-y-2 overflow-y-auto" style="max-height:150px">${r.steps.map((s,i)=>`<li class="flex gap-2 text-sm"><span class="w-5 h-5 shrink-0 rounded-full grid place-items-center text-[11px] font-extrabold" style="background:${i===ls?'var(--free)':'var(--ink)'};color:${i===ls?'#fff':'var(--inkfg)'}">${i+1}</span><span>${s.t}${s.d!=null?` <span class="mut">(${s.d.toFixed(1)} km)</span>`:''}</span></li>`).join('')}</ol>`}
+<div class="text-[11px] mut mt-2">~${ff} bays expected free on arrival</div></div>
+<div class="grid grid-cols-3 gap-2 mt-2"><a href="https://yandex.com/maps/?rtext=${f}~${d}&rtt=auto" target="_blank" rel="noopener" class="btn ghost" style="padding:12px;font-size:13px">Yandex</a><a href="https://www.google.com/maps/dir/?api=1&origin=${f}&destination=${d}&travelmode=driving" target="_blank" rel="noopener" class="btn ghost" style="padding:12px;font-size:13px">Google</a><button data-a="bmgo" data-id="${l.id}" class="btn" style="padding:12px;font-size:13px">Book bay</button></div>`}
+function bmUI(){const e=document.getElementById('bmui');if(!e)return;const l=ui.sel&&L(ui.sel),T=['Low','Medium','Peak'];
+ e.innerHTML=`<div style="pointer-events:auto;position:absolute;top:10px;left:50%;transform:translateX(-50%)">${fc()}</div>`+(l?`<div class="card p-4 absolute left-3 right-3 bottom-3 overflow-y-auto" style="pointer-events:auto;max-height:72%"><div class="flex justify-between items-start"><div><b class="text-base">${l.name}</b><div class="text-xs mut">${Math.round(ld(l))}% full · ${fr(l)} bays free · ${T[TR(l)]} load</div></div><div class="font-extrabold" style="color:${TC(l)}">${fmt(P(l))}/hr</div></div>${ui.rt&&ui.rt.id===l.id?rm(l):`<div class="grid grid-cols-2 gap-2 mt-3"><button data-a="route" data-id="${l.id}" class="btn ghost">Route</button><button data-a="bmgo" data-id="${l.id}" class="btn">Choose a bay</button></div>`}</div>`:'')}
+function anpr(){const s=ui.scan,c=s&&s.ok?'free':'occ';return `<div class="card p-3 mb-3"><div class="font-bold text-sm mb-2">ANPR camera</div><div class="rounded-xl h-24 grid place-items-center mb-2" style="background:#0a0f1c">${s?plateTag(s.plate):'<span class="mut text-xs">Waiting for vehicle…</span>'}</div>${s&&!s.busy?`<div class="rounded-xl p-2 text-sm font-bold mb-2" style="background:color-mix(in srgb,var(--${c}) 15%,var(--card));color:var(--${c})">${s.ok?'✓ Valid booking · Bay '+s.bay+' · barrier opens':'✕ No booking · fine '+fmt(440000)+' issued'}</div>`:s?'<div class="text-xs mut mb-2">Scanning…</div>':''}<input data-k="scanp" value="${ui.f.scanp||''}" placeholder="01 A 777 AA" class="inp mb-2"><div class="flex gap-2 overflow-x-auto"><button data-a="scan" class="pill on">Scan typed plate</button><button data-a="scanb" class="pill">Scan booked car</button><button data-a="scanr" class="pill">Random car</button></div>${S.fines.slice(0,4).map(f=>`<div class="flex justify-between text-xs mut mt-2"><span>${f.plate}</span><span>${f.at} · ${fmt(440000)}</span></div>`).join('')}</div>`}
+function doScan(p){p=(p||'').trim().toUpperCase();if(!p)return;ui.scan={plate:p,busy:1};render();setTimeout(()=>{const b=S.booking,ok=b&&b.plate.replace(/\s/g,'').toUpperCase()===p.replace(/\s/g,'');ui.scan={plate:p,ok:!!ok,bay:ok?b.spot:''};if(!ok)S.fines.unshift({plate:p,at:new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})});save();render()},700)}
+const BR={Payme:['#10C4B8','#06707A'],Click:['#2196F3','#0B3C8C'],'Uzum Bank':['#8B5CF6','#4C1D95']},CARD='9860176619784802',CARDNO={Payme:'9860 1766 •••• 4802',Click:'9860 1766 •••• 4802','Uzum Bank':'9860 1766 •••• 4802'};
+function openPA(){paUI();setTimeout(()=>{if(ui.pa&&ui.pa.step==='redir'){ui.pa.step='main';paUI();startType()}},900)}
+function payDone(){const s=ui.sheet,l=L(ui.loc);if(!s)return;const tot=price(l,s.d,s.mt);if(S.spots[l.id][s.spot]!=='f'){ui.sheet=null;toast('Bay just taken. Pick another');return}const c=S.cars[s.car];S.spots[l.id][s.spot]='b';S.revenue+=tot;S.booking={id:Math.random().toString(36).slice(2,8).toUpperCase(),loc:l.id,spot:s.spot,d:s.d,plate:c.plate,model:c.model,pm:s.pm,price:tot,end:Date.now()+s.d*3600000,status:'reserved',rate:P(l),mt:s.mt};save();ui.sheet=null;ui.loc=null;ui.tab='pass';ui.mode='driver'}
+let PT;const cc=()=>S.cards[S.cs]||S.cards[0],tsOf=()=>{const c=cc();return c.full?c.full.replace(/(\d{4})(?=\d)/g,'$1 '):c.mask},fmtCard=n=>{const s=tsOf();return s.slice(0,n)+(n<s.length?'|':'')};
+function startType(){const p=ui.pa;if(!p)return;clearInterval(PT);p.n=0;p.cardOk=0;const e=()=>document.getElementById('cn');if(e())e().textContent='|';
+ PT=setInterval(()=>{if(ui.pa!==p||p.step!=='main'){clearInterval(PT);return}p.n++;if(e())e().textContent=fmtCard(p.n);if(p.n>=tsOf().length){clearInterval(PT);setTimeout(()=>{if(ui.pa===p){p.cardOk=1;paUI()}},600)}},70)}
+function paUI(){const p=ui.pa,o=document.getElementById('pa');if(!p){o.innerHTML='';return}const [c1,c2]=BR[p.app],bal=S.bank[p.app],top=p.mode==='top',s=ui.sheet,l=s&&L(ui.loc);let b;
+ const pl=(on)=>`style="${on?'background:#fff;color:'+c2:'background:rgba(255,255,255,.18);color:#fff'}"`;
+ if(p.step==='redir'||p.step==='busy')b=`<div class="text-center pt-32"><span class="spin inline-block w-9 h-9 rounded-full border-4" style="border-color:#fff;border-top-color:transparent"></span><div class="mt-4 font-bold">${p.step==='redir'?'Opening '+p.app+'…':'Processing payment…'}</div></div>`;
+ else if(p.step==='ok')b=`<div class="text-center pt-24"><div class="w-20 h-20 rounded-full grid place-items-center mx-auto text-4xl" style="background:rgba(255,255,255,.2)">✓</div><div class="text-2xl font-extrabold mt-4">Payment successful</div><div class="opacity-80 mt-1">${fmt(p.amt)} · returning to UzParking…</div></div>`;
+ else b=`${top?`<div class="flex gap-2 mt-4">${Object.keys(BR).map(a=>`<button data-a="paapp" data-id="${a}" class="pill" ${pl(a===p.app)}>${a}</button>`).join('')}</div>`:''}
+ ${S.cards.length>1?`<div class="flex gap-2 overflow-x-auto mt-4">${S.cards.map((c,i)=>`<button data-a="pacard" data-id="${i}" class="pill" ${pl(S.cs===i)}>${c.brand} ${c.mask.slice(-4)}</button>`).join('')}</div>`:''}<div class="text-xs opacity-80 mt-4 mb-1">Card number</div><div id="cn" class="rounded-2xl px-4 py-3 font-bold tracking-widest text-lg" style="background:rgba(255,255,255,.18);min-height:48px">${p.cardOk?cc().mask:fmtCard(p.n||0)}</div><div class="rounded-3xl p-5 mt-3" style="background:rgba(0,0,0,.28)"><div class="flex justify-between text-xs opacity-70"><span>My card</span><span>${cc().brand}</span></div><div class="text-xl font-bold tracking-widest mt-6">${cc().mask}</div><div class="flex justify-between mt-4 text-xs"><span>${(cc().name||S.acct.name).toUpperCase()}</span><span>${cc().exp}</span></div></div>
+ <div class="text-sm mt-3 opacity-90">Card balance: <b>${fmt(bal)}</b></div>
+ ${top?`<div class="text-xs opacity-80 mt-4 mb-1">Top up UzParking Wallet</div><div class="flex gap-2 overflow-x-auto">${[50000,100000,200000,500000].map(a=>`<button data-a="paamt" data-id="${a}" class="pill" ${pl(a===p.amt)}>${a/1000}k</button>`).join('')}</div>`:`<div class="rounded-2xl p-3 mt-4 text-sm" style="background:rgba(255,255,255,.14)"><div class="opacity-80 text-xs">Merchant</div><b>UzParking · Bay ${s?s.spot:''}, ${l?l.name:''}</b></div>`}
+ <div class="rounded-2xl p-3 mt-3 flex justify-between items-center" style="background:rgba(255,255,255,.14)"><span>Amount</span><b class="text-xl">${fmt(p.amt)}</b></div>
+ ${p.step==='pin'?`<div class="text-xs opacity-80 mt-4 mb-1">SMS code (demo: 7777)</div><input id="pin" maxlength="4" inputmode="numeric" value="7777" class="inp text-center text-2xl tracking-[.6em] font-extrabold" style="color:#111;background:#fff">`:''}
+ <div class="text-sm font-bold mt-3 min-h-[20px]" style="color:#FFE08A">${p.err||''}</div>
+ ${p.err&&bal<p.amt?'<button data-a="paadd" class="w-full py-3 rounded-2xl font-bold mb-2" style="background:rgba(255,255,255,.2)">Add 500 000 to card (demo)</button>':''}
+ <button data-a="${p.step==='pin'?'paconf':'papay'}" class="w-full py-4 rounded-2xl font-extrabold bg-white mt-1" style="color:${c2}">${p.step==='pin'?'Confirm':top?'Top up '+fmt(p.amt):'Pay '+fmt(p.amt)}</button>`;
+ o.innerHTML=`<div class="fixed inset-y-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] z-[55] text-white flex flex-col" style="background:linear-gradient(170deg,${c1},${c2})"><div class="flex items-center justify-between px-5 pt-5"><b class="text-2xl tracking-tight">${p.app}</b><button data-a="pacancel" class="text-sm opacity-80">✕ Cancel</button></div><div class="px-5 pb-8 flex-1 overflow-auto">${b}</div></div>`}
+const DEMO_CARS=[{plate:'01 A 777 AA',model:'BYD Song Plus'},{plate:'10 B 456 CA',model:'Chevrolet Malibu'}];
+document.addEventListener('input',e=>{const k=e.target.dataset&&e.target.dataset.k;if(k==='cn'||k==='ce'){const d=dg(e.target.value);ui.f[k]=k==='cn'?d.slice(0,16).replace(/(\d{4})(?=\d)/g,'$1 '):d.slice(0,4).replace(/(\d{2})(?=\d)/,'$1/');e.target.value=ui.f[k];ui.stErr='';return}if(k){ui.f[k]=/plate|scanp|^ch$/.test(k)?e.target.value.toUpperCase():e.target.value;if(/plate|scanp|^ch$/.test(k))e.target.value=ui.f[k];ui.err=''}});
+function showErr(x){let e=document.getElementById('err');if(!e){e=document.createElement('div');e.id='err';e.style.cssText='position:fixed;left:8px;right:8px;bottom:8px;z-index:9999;background:#B91C1C;color:#fff;padding:8px 10px;border-radius:10px;font:12px monospace';document.body.appendChild(e)}e.textContent='Error: '+((x&&x.message)||x)}
+window.addEventListener('error',ev=>showErr(ev.error||ev.message));
+document.addEventListener('click',e=>{try{H0(e)}catch(x){showErr(x)}});
+function H0(e){const t=e.target.closest('[data-a]');if(!t)return;const a=t.dataset.a,id=t.dataset.id,f=ui.f;if((a==='close'||a==='stx')&&e.target!==t)return;
+ if(a==='atab'){ui.at=id;ui.err=''}
+ else if(a==='astep'){ui.step='form';ui.err=''}
+ else if(a==='demo'){S.acct={name:'Aziz Karimov',phone:'+998 90 123 45 67'};S.cars=DEMO_CARS.map(c=>({...c}));S.car=0;S.session=true;ui.tab='explore';save()}
+ else if(a==='send'){if(ui.at==='up'){if(!(f.name||'').trim()||dg(f.phone).length<9||!(f.plate||'').trim()||!(f.model||'').trim()){ui.err='Fill in every field, including a full phone number.';render();return}ui.pend={name:f.name.trim(),phone:f.phone,plate:f.plate.trim(),model:f.model.trim()}}
+  else{if(!S.acct||dg(f.phone)!==dg(S.acct.phone)){ui.err='No account for this number. Create one or use Demo User.';render();return}ui.pend=S.acct}ui.step='otp';ui.err=''}
+ else if(a==='verify'){if(document.getElementById('otp').value!=='7777'){ui.err='Wrong code. Use 7777.';render();return}const p=ui.pend;if(ui.at==='up'){S.acct={name:p.name,phone:p.phone};S.cars=[{plate:p.plate,model:p.model}];S.car=0;S.wallet=250000}S.session=true;ui.step='form';ui.tab='explore';ui.f={};save()}
+ else if(a==='mode'){ui.mode=id;ui.sheet=null}
+ else if(a==='tab'){ui.tab=id;ui.loc=null;ui.err='';ui.addCar=false}
+ else if(a==='flt')ui.filter=id;
+ else if(a==='loc'){ui.loc=id;ui.tab='explore'}
+ else if(a==='back')ui.loc=null;
+ else if(a==='spot'){const v=S.spots[ui.loc][id];if(v!=='f'){toast(v==='o'?'Bay '+id+' is occupied':'Bay '+id+' is reserved');return}if(S.booking){toast('Finish your current pass first');return}ui.sheet={spot:id,d:1,car:S.car,pm:'wallet',mt:0}}
+ else if(a==='close')ui.sheet=null;
+ else if(a==='dur')ui.sheet.d=+id;
+ else if(a==='mt')ui.sheet.mt=!ui.sheet.mt;
+ else if(a==='ft')ui.t=+id;
+ else if(a==='rmt'){ui.rm=ui.rm===0?1:0;bmUI();return}
+ else if(a==='route'){if(!ui.bm)openMap();route(id);return}
+ else if(a==='bigmap')openMap();
+ else if(a==='bmclose'||a==='bmgo'){closeMap();if(a==='bmgo'){ui.loc=id;ui.tab='explore'}}
+ else if(a==='scan')doScan(ui.f.scanp);
+ else if(a==='scanb')doScan(S.booking?S.booking.plate:S.cars[0].plate);
+ else if(a==='scanr')doScan(['30 K 912 MM','75 X 021 TT','10 B 456 CA'][Math.floor(Math.random()*3)]);
+ else if(a==='payfine'){if(S.wallet<440000){toast('Wallet too low');return}S.wallet-=440000;S.fines=S.fines.filter(f=>!S.cars.some(c=>c.plate.replace(/\s/g,'')===f.plate.replace(/\s/g,'')));save();toast('Fine paid')}
+ else if(a==='scar')ui.sheet.car=+id;
+ else if(a==='pm'){ui.sheet.pm=id;ui.sheet.err=''}
+ else if(a==='pay'){const s=ui.sheet,l=L(ui.loc),tot=price(l,s.d,s.mt);if(s.busy)return;if(s.pm==='wallet'&&S.wallet<tot){s.err='Wallet balance too low. Pick another method or top up.';render();return}
+  if(s.pm!=='wallet'){ui.pa={app:s.pm,mode:'pay',amt:tot,step:'redir'};openPA();return}
+  s.busy=true;render();setTimeout(()=>{if(S.spots[l.id][s.spot]!=='f'){ui.sheet=null;toast('Bay just taken. Pick another');render();return}const c=S.cars[s.car];
+   S.spots[l.id][s.spot]='b';if(s.pm==='wallet')S.wallet-=tot;S.revenue+=tot;S.booking={id:Math.random().toString(36).slice(2,8).toUpperCase(),loc:l.id,spot:s.spot,d:s.d,plate:c.plate,model:c.model,pm:s.pm,price:tot,end:Date.now()+s.d*3600000,status:'reserved',rate:P(l),mt:s.mt};
+   save();ui.sheet=null;ui.loc=null;ui.tab='pass';toast('Payment successful');render()},1200);return}
+ else if(a==='entry'){S.booking.status='parked';save();toast('Barrier opened. Welcome!')}
+ else if(a==='exit'){const b=S.booking;S.spots[b.loc][b.spot]='f';S.hist.unshift({loc:L(b.loc).name,spot:b.spot,plate:b.plate,price:b.price,date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short'})});S.booking=null;save();toast('Session finished. Bay released')}
+ else if(a==='topup'){ui.pa={app:'Payme',mode:'top',amt:100000,step:'redir'};openPA();return}
+ else if(a==='settings'){ui.st=1;ui.stErr='';setUI();return}
+ else if(a==='stc'||a==='stx'){ui.st=0;setUI();return}
+ else if(a==='sth'){ST.theme=id;saveST();applyTheme();setUI();return}
+ else if(a==='stl'){ST.lang=id;saveST();applyTheme();render();if(ui.bm)bmUI();if(ui.pa)paUI();setUI();return}
+ else if(a==='stcs'){S.cs=+id;save();setUI();return}
+ else if(a==='pacard'){S.cs=+id;save();paUI();startType();return}
+ else if(a==='stdel'){if(S.cards.length<2){ui.stErr='Keep at least one card';setUI();return}S.cards.splice(+id,1);S.cs=0;save();setUI();return}
+ else if(a==='stadd'){const d=dg(ui.f.cn),ex=ui.f.ce||'',m=+ex.slice(0,2);if(d.length!==16){ui.stErr='Enter a 16-digit card number';setUI();return}if(!/^\d\d\/\d\d$/.test(ex)||m<1||m>12){ui.stErr='Enter expiry as MM/YY';setUI();return}S.cards.push({mask:d.slice(0,4)+' •••• •••• '+d.slice(12),full:'',name:(ui.f.ch||'').trim(),exp:ex,brand:/^8600/.test(d)?'Uzcard':/^9860/.test(d)?'Humo':d[0]==='4'?'Visa':d[0]==='5'?'Mastercard':'Card'});S.cs=S.cards.length-1;ui.f.cn=ui.f.ch=ui.f.ce='';ui.stErr='';save();toast('Card added');setUI();return}
+ else if(a==='theme'){const d=document.documentElement,dk=d.dataset.theme?d.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;d.dataset.theme=dk?'light':'dark'}
+ else if(a==='paapp'){ui.pa.app=id;ui.pa.err='';paUI();startType();return}
+ else if(a==='paamt'){ui.pa.amt=+id;ui.pa.err='';paUI();return}
+ else if(a==='paadd'){S.bank[ui.pa.app]+=500000;ui.pa.err='';save();paUI();return}
+ else if(a==='papay'){const p=ui.pa;if(!p.cardOk)return;if(S.bank[p.app]<p.amt){p.err='Not enough funds on this card';paUI();return}p.err='';p.step='pin';paUI();return}
+ else if(a==='paconf'){const p=ui.pa;if(document.getElementById('pin').value!=='7777'){p.err='Wrong code. Use 7777.';paUI();return}p.step='busy';paUI();setTimeout(()=>{S.bank[p.app]-=p.amt;if(p.mode==='top'){S.wallet+=p.amt;toast('Wallet topped up')}else payDone();p.step='ok';save();paUI();setTimeout(()=>{ui.pa=null;paUI();render()},1500)},1200);return}
+ else if(a==='pacancel'){clearInterval(PT);ui.pa=null;paUI();return}
+ else if(a==='addcar')ui.addCar=!ui.addCar;
+ else if(a==='savecar'){if(!(f.plate2||'').trim()||!(f.model2||'').trim()){ui.err='Enter plate and model.';render();return}S.cars.push({plate:f.plate2.trim(),model:f.model2.trim()});S.car=S.cars.length-1;f.plate2=f.model2='';ui.addCar=false;ui.err='';save();toast('Vehicle added')}
+ else if(a==='car'){S.car=+id;save()}
+ else if(a==='logout'){S.session=false;ui.mode='driver';ui.at='in';save()}
+ else if(a==='reset'){S=def();ui={...ui,loc:null,sheet:null,f:{},step:'form',at:'in',mode:'driver',tab:'explore'};save();toast('Demo data reset')}
+ else if(a==='oploc')ui.opLoc=id;
+ else if(a==='tog'){const m=S.spots[ui.opLoc];if(m[id]==='b'){toast('Bay '+id+' is reserved by a driver');return}m[id]=m[id]==='f'?'o':'f';save()}
+ render()}
+render();
+</script>
+</body>
+</html>
